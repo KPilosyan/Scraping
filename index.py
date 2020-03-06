@@ -3,6 +3,8 @@ import urllib.request
 import time
 from bs4 import BeautifulSoup
 import os
+import re
+import unidecode
 
 main_url = 'http://books.toscrape.com/'
 
@@ -27,10 +29,8 @@ def getCategoryPagesUrls(categoryName):
             tag = i
             first_url = main_url + str(tag["href"])
             urls.append(first_url)
-            print(urls[0])
             sauce = urllib.request.urlopen(urls[0]).read()
             soup = BeautifulSoup(sauce, "html.parser")
-
             count = 1
             while soup.find(text ="next"):
                 tag = soup.find(text = "next").parent 
@@ -65,88 +65,61 @@ def downloadPrices(url):
 
     return prices
 
-def downloadImages(url):
+def deleteRepSubString(string, rep):
+    if rep not in string:
+        return string
+    while rep in string:
+        string = string.replace(rep, "")
+    return string
+
+def createFolder(path, folderName):
+    if os.path.isdir(folderName)==True:
+        pass
+    else:
+        os.mkdir(os.path.join(path,folderName))
+
+# def resolveSpecialCharacters(s):
+#     # punctuation = r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
+#     # return s.rstrip(punctuation)
+
+def resolveSpecialCharacters(string):
+    for i in string:
+        if not i.isalnum():
+            string = string.replace(i, " ")
+
+    return string
+
+def downloadImagesToFolder(url, category):
+    
     sauce = urllib.request.urlopen(url).read()
     soup = BeautifulSoup(sauce, "html.parser")
 
     imgs = soup.find_all("img")
-    imageURLs = []
+    # imageURLs = []
+    titles = downloadTitles(url)
+    prices = downloadPrices(url)
+    path = "C:/Users/User/Desktop/Scraping/"
+    count = 0
     for i in imgs:
-        imageURLs.append(main_url + i["src"])
+        createFolder(path, category)
+        imageURL = main_url + deleteRepSubString(i["src"], "../")
+        titles[count] = resolveSpecialCharacters(titles[count])
+        urllib.request.urlretrieve(imageURL, category + "/" + titles[count] + " " + str(prices[count]) + ".jpg")
+                
+        count += 1
     
-    return imageURLs
-
-# def createFolder(name):
-#     path = 'C:/Users/User/Desktop/Scraping/' + name
-#     return os.mkdir(path)
-
-# def downloadCategoryPage(url):
-#     # sauce = urllib.request.urlopen(url).read()
-#     # soup = BeautifulSoup(sauce, "html.parser")
-
-#     for i in getSideCategoryNames(main_url):
-#         # folder = createFolder(i)
-#         url = getCategoryPagesUrls(i)
-#         titles = downloadTitles(url)
-#         prices = downloadPrices(url)
-#         count = 0
-#         for k in downloadImages(url):
-#             urllib.request.urlretrieve(k, i + "/" + str(titles[count]) + "/n" + str(prices[count]))
-
-# root_path = 'C:/Users/User/Desktop/Scraping'
-# count = 2
-# for folder in ategories:
-#     os.mkdir(os.path.join(root_path,str(folder)))    #creates folder for each item in list 
-#     path = root_path + "/" + str(folder)
-#     url = main_url + "catalogue/category/books/" + str(folder).lower() + "_" + str(count) + "/index.html"
-#     sauce = urllib.request.urlopen(url).read()
-#     soup = BeautifulSoup(sauce, "html.parser")
-#     #print(url)
-
-    
-
-    
-
-#     imgs = soup.find_all("img")
-#     count_images = 0
-
-#     for i in imgs:
-#         print(main_url + i["src"].strip("../"), str(folder) + "/" + str(titles[count_images]) + str(prices[count_images]) + ".jpg")
-#         download = urllib.request.urlretrieve(main_url + i["src"].strip("../"), str(folder) + "/" + str(titles[count_images]) + str(prices[count_images]) + ".jpg")
-#         count_images += 1 
-
-#     while soup.find(text ="next"):
-#         count_images = 0
-#         next_tag = soup.find(text ="next").parent
-#         next_page_url = url.replace("index.html",next_tag["href"])
-#         sauce = urllib.request.urlopen(next_page_url).read()
-#         soup = BeautifulSoup(sauce, "html.parser")
-#         imgs = soup.find_all("img")
-        
-#         for i in imgs:
-#             download 
-#             count_images += 1
-            
-        
-#     count += 1
-
-    
-
 def main():
-
-    # sauce = urllib.request.urlopen(url).read()
-    # soup = BeautifulSoup(sauce, "html.parser")
 
     for i in getSideCategoryNames(main_url):
         # folder = createFolder(i)
         url = getCategoryPagesUrls(i)
-        titles = downloadTitles(url)
-        prices = downloadPrices(url)
-        count = 0
-        for k in downloadImages(url):
-            urllib.request.urlretrieve(k, i + "/" + str(titles[count]) + "/n" + str(prices[count]))
-            count += 1
+        for n in url:
+            downloadImagesToFolder(n,i)
+            # count = 0
+            # for k in downloadImages(n):
+            # urllib.request.urlretrieve(k, i + "/" + str(titles[count]) + "/n" + str(prices[count]))
+            # count += 1
 
-        time.sleep(1)
+        # time.sleep(1)
 
 main()
